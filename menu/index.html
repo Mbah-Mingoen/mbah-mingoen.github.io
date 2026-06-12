@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Daftar Lengkap Menu Warkop Mbah Mingoen - Kopi Tubruk, Wedang Tradisional, dan Cemilan khas Jawa tempo doeloe.">
+    <title>Daftar Menu Lengkap | Warkop Mbah Mingoen</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            darkest: '#140e0a',   /* Darkest mahogany wood */
+                            dark: '#22160f',      /* Deep coffee brown */
+                            wood: '#3e281b',      /* Rich teak wood */
+                            amber: '#8c593b',     /* Warm medium brown */
+                            terracotta: '#b85a38',/* Javanese clay/terracotta */
+                            gold: '#dfa15f',      /* Warm caramel/gold */
+                            cream: '#f9ebdb',     /* Soft ivory/cream background */
+                            creamlight: '#fff8f0' /* Warm off-white */
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        serif: ['"Playfair Display"', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Alpine.js CDN -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- Google Sheets Menu Database Configuration & Fetcher -->
+    <script>
+        // CONFIG: Replace with your Google Spreadsheet ID
+        const SPREADSHEET_ID = "1ncxs8NTNu242wznRlXNIi43pCrk2t5K1O3uouW4hjsM";
+
+        // CSV Parsing logic matching standard RFC 4180
+        function parseCSV(text) {
+            let lines = [];
+            let row = [""];
+            let inQuotes = false;
+
+            for (let i = 0; i < text.length; i++) {
+                let c = text[i];
+                let next = text[i + 1];
+                if (c === '"') {
+                    if (inQuotes && next === '"') { row[row.length - 1] += '"'; i++; }
+                    else { inQuotes = !inQuotes; }
+                } else if (c === ',' && !inQuotes) {
+                    row.push('');
+                } else if ((c === '\r' || c === '\n') && !inQuotes) {
+                    if (c === '\r' && next === '\n') { i++; }
+                    lines.push(row);
+                    row = [''];
+                } else {
+                    row[row.length - 1] += c;
+                }
+            }
+            if (row.length > 1 || row[0] !== '') {
+                lines.push(row);
+            }
+
+            if (lines.length < 2) return [];
+
+            const headers = lines[0].map(h => h.trim().toLowerCase());
+            const data = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const rowData = lines[i];
+                if (rowData.length < headers.length) continue;
+                const item = {};
+                headers.forEach((header, index) => {
+                    item[header] = rowData[index] ? rowData[index].trim() : '';
+                });
+
+                const name = item.name || item.nama || item['nama menu'] || '';
+                let category = (item.category || item.kategori || '').toLowerCase().trim();
+                if (category.includes('wedang')) {
+                    category = 'wedang';
+                } else if (category.includes('non-kopi')) {
+                    category = 'non-kopi';
+                }
+                const rawPrice = item.price || item.harga || '0';
+                const price = Number(rawPrice.replace(/[^0-9]/g, '')) || 0;
+                const desc = item.desc || item.deskripsi || item.description || '';
+
+                const rawBadge = item.badge || item.label || '';
+                const badges = rawBadge ? rawBadge.split(',').map(b => b.trim()).filter(b => b) : [];
+
+                const rawStatus = item.status || item.ketersediaan || item.available || '';
+                const isAvailable = !(rawStatus.toLowerCase().trim() === 'tidak tersedia' || rawStatus.toLowerCase().trim() === 'habis' || rawStatus.toLowerCase().trim() === 'false' || rawStatus.toLowerCase().trim() === '0');
+
+                if (name && isAvailable) {
+                    data.push({
+                        id: `sheet-${i}`,
+                        name,
+                        category,
+                        price,
+                        desc,
+                        badge: badges.join(', '),
+                        badges: badges
+                    });
+                }
+            }
+            return data;
+        }
+
+        // Expose helper globally for Alpine.js components
+        window.getFirebaseMenu = async () => {
+            if (SPREADSHEET_ID === "PLACEHOLDER_SPREADSHEET_ID") {
+                console.warn("Spreadsheet ID is not configured. Using empty list.");
+                return [];
+            }
+            const csvUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv`;
+            const res = await fetch(csvUrl);
+            if (!res.ok) {
+                throw new Error(`Google Sheets fetch failed with status ${res.status}`);
+            }
+            const csvText = await res.text();
+            return parseCSV(csvText);
+        };
+
+        // Dispatch custom event to notify Alpine.js components
+        window.dispatchEvent(new CustomEvent('firebase-ready'));
+    </script>
+
+    <style>
+        /* Custom scrollbar matching the retro theme */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #22160f;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #8c593b;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #dfa15f;
+        }
+
+        .vintage-grid-pattern {
+            background-image: radial-gradient(rgba(140, 89, 59, 0.15) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+        .batik-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.03;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cpath d='M30 0 L60 30 L30 60 L0 30 Z' fill='none' stroke='%238c593b' stroke-width='1'/%3E%3Ccircle cx='30' cy='30' r='10' fill='none' stroke='%238c593b' stroke-width='1'/%3E%3Cpath d='M30 10 L30 20 M30 40 L30 50 M10 30 L20 30 M40 30 L50 30' stroke='%238c593b' stroke-width='1'/%3E%3C/svg%3E");
+        }
+    </style>
+</head>
+
+<body class="bg-brand-dark text-brand-cream font-sans antialiased overflow-x-hidden relative" x-data="{
+          searchQuery: '',
+          filterCategory: 'semua',
+          sortBy: 'default',
+          meja: '',
+          cart: [],
+          initCart() {
+              // Parse table number from URL or localStorage
+              const urlParams = new URLSearchParams(window.location.search);
+              const urlMeja = urlParams.get('meja');
+              if (urlMeja) {
+                  localStorage.setItem('warkop_meja', urlMeja);
+                  this.meja = urlMeja;
+              } else {
+                  this.meja = localStorage.getItem('warkop_meja') || '';
+              }
+
+              // Load cart from localStorage
+              try {
+                  const savedCart = localStorage.getItem('warkop_cart');
+                  this.cart = savedCart ? JSON.parse(savedCart) : [];
+              } catch (e) {
+                  this.cart = [];
+              }
+          },
+          addToCart(item) {
+              let existing = this.cart.find(c => c.id === item.id);
+              if (existing) {
+                  existing.quantity++;
+              } else {
+                  this.cart.push({
+                      id: item.id,
+                      name: item.name,
+                      price: item.price,
+                      category: item.category,
+                      quantity: 1
+                  });
+              }
+              this.saveCart();
+          },
+          decreaseQty(itemId) {
+              let idx = this.cart.findIndex(c => c.id === itemId);
+              if (idx !== -1) {
+                  if (this.cart[idx].quantity > 1) {
+                      this.cart[idx].quantity--;
+                  } else {
+                      this.cart.splice(idx, 1);
+                  }
+                  this.saveCart();
+              }
+          },
+          increaseQty(itemId) {
+              let existing = this.cart.find(c => c.id === itemId);
+              if (existing) {
+                  existing.quantity++;
+                  this.saveCart();
+              }
+          },
+          getItemQty(itemId) {
+              let existing = this.cart.find(c => c.id === itemId);
+              return existing ? existing.quantity : 0;
+          },
+          saveCart() {
+              localStorage.setItem('warkop_cart', JSON.stringify(this.cart));
+          },
+          get cartTotalItems() {
+              return this.cart.reduce((sum, item) => sum + item.quantity, 0);
+          }
+      }" x-init="initCart()">
+
+    <!-- Vintage Background Grid -->
+    <div class="vintage-grid-pattern absolute inset-0 z-0 opacity-40 pointer-events-none"></div>
+
+    <!-- STICKY TABLE WARNING (IF NO TABLE) -->
+    <div x-show="!meja"
+        class="bg-[#8c2d19] text-brand-cream py-3 px-4 text-center text-xs font-semibold tracking-wide relative z-50 border-b border-brand-wood/40 flex items-center justify-center gap-2">
+        <svg class="h-4 w-4 text-brand-gold animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <span>Anda mengakses menu tanpa Nomor Meja. Silakan scan QR code di meja Anda untuk memesan secara
+            langsung.</span>
+    </div>
+
+    <!-- SIMPLIFIED HEADER -->
+    <header
+        class="bg-brand-darkest border-b border-brand-wood/40 sticky top-0 z-40 backdrop-blur-md bg-brand-darkest/95">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <!-- Brand Logo -->
+                <a href="../index.html" class="flex items-center gap-3 group">
+                    <div
+                        class="h-14 w-14 rounded-full border-2 border-brand-gold overflow-hidden shadow-lg shadow-brand-gold/10 transition-transform group-hover:rotate-6 flex items-center justify-center bg-transparent">
+                        <img src="../assets/images/logo.png" alt="Mbah Mingoen Logo"
+                            class="h-full w-full object-cover invert">
+                    </div>
+                    <div>
+                        <span
+                            class="font-serif font-bold text-xl sm:text-2xl text-brand-creamlight tracking-wide block leading-none">Warkop</span>
+                        <span class="font-sans text-xs text-brand-gold tracking-widest uppercase font-semibold">Mbah
+                            Mingoen</span>
+                    </div>
+                </a>
+
+                <!-- Table Indicator & Back to Home Link -->
+                <div class="flex items-center gap-4">
+                    <template x-if="meja">
+                        <span
+                            class="bg-brand-wood/80 border border-brand-gold/30 text-brand-gold text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5">
+                            <span class="h-2 w-2 rounded-full bg-brand-gold animate-pulse"></span>
+                            Meja <span x-text="meja"></span>
+                        </span>
+                    </template>
+                    <a href="../index.html"
+                        class="inline-flex items-center gap-2 text-sm text-brand-cream/80 hover:text-brand-gold transition-colors font-medium">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                        Kembali
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- BANNER HERO -->
+    <section class="relative bg-brand-darkest text-brand-cream py-16 overflow-hidden">
+        <div class="absolute inset-0 z-0">
+            <div class="absolute inset-0 bg-gradient-to-b from-brand-darkest/40 to-brand-darkest"></div>
+            <div class="batik-overlay"></div>
+            <div class="vintage-grid-pattern absolute inset-0 opacity-20"></div>
+        </div>
+
+        <div class="relative z-10 max-w-4xl mx-auto px-4 text-center space-y-4">
+            <span class="font-sans text-brand-gold font-semibold uppercase tracking-widest text-xs sm:text-sm">Buku Menu
+                Lengkap</span>
+            <h1 class="font-serif text-3xl sm:text-5xl font-extrabold text-brand-creamlight">Hidangan Tempo Doeloe</h1>
+            <p class="text-xs sm:text-base text-brand-cream/75 max-w-xl mx-auto font-light leading-relaxed">
+                Nikmati jajaran racikan kopi tubruk legendaris, wedang hangat pereda penat, serta snack gurih buatan
+                Mbah yang menggugah selera.
+            </p>
+        </div>
+    </section>
+
+    <!-- FILTER & CATALOG CONTAINER -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10" x-data="{
+             isLoading: false,
+             items: [],
+             categoryBadgeClass(cat) {
+                 const lc = cat ? cat.toLowerCase() : '';
+                 if (lc === 'kopi') return 'bg-brand-gold text-brand-darkest border border-brand-gold/20';
+                 if (lc === 'snack') return 'bg-yellow-400/70 text-brand-cream border border-yellow-500/20';
+                 if (lc === 'wedang') return 'bg-red-800/90 text-brand-gold border border-red-800/70';
+                 if (lc === 'non-kopi') return 'bg-brand-amber text-brand-light border border-brand-amber/20';
+                 // Fallback for unknown categories
+                                   return 'bg-blue-800/90 text-brand-gold border border-brand-gold/20';
+             },
+             categoryDisplay(cat) {
+                 if (!cat) return '';
+                 return cat.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+             },
+             get filteredAndSortedItems() {
+                 let result = this.items.filter(item => {
+                     // Category filter
+                     let matchCategory = filterCategory === 'semua' || item.category === filterCategory;
+                     // Text search filter
+                     let matchSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                       item.desc.toLowerCase().includes(searchQuery.toLowerCase());
+                     return matchCategory && matchSearch;
+                 });
+
+                 // Sort logic
+                 if (sortBy === 'low-to-high') {
+                     result.sort((a, b) => a.price - b.price);
+                 } else if (sortBy === 'high-to-low') {
+                     result.sort((a, b) => b.price - a.price);
+                 }
+                 return result;
+             },
+             get categories() {
+                 const cats = this.items.map(item => item.category);
+                 return [...new Set(cats)].filter(c => c);
+             },
+             categoryDisplay(cat) {
+                 if (!cat) return '';
+                 return cat.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+             },
+             async init() {
+                 const fetchMenu = async () => {
+                     this.isLoading = true;
+                     try {
+                         const remoteItems = await window.getFirebaseMenu();
+                         if (remoteItems && remoteItems.length > 0) {
+                             this.items = remoteItems;
+                         }
+                     } catch (err) {
+                          console.warn('Firebase fetch failed or not configured.', err);
+                     } finally {
+                          this.isLoading = false;
+                     }
+                 };
+
+                 if (typeof window.getFirebaseMenu === 'function') {
+                     await fetchMenu();
+                 } else {
+                     window.addEventListener('firebase-ready', async () => {
+                         await fetchMenu();
+                     });
+                 }
+             }
+          }">
+
+        <!-- CONTROL BAR: Search, Category, Sorting -->
+        <div class="bg-brand-darkest/60 border border-brand-wood/60 rounded-3xl p-6 mb-10 shadow-sm space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                <!-- Search bar -->
+                <div class="md:col-span-6 relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-brand-amber">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </span>
+                    <input type="text" x-model="searchQuery" placeholder="Cari kopi atau cemilan favoritmu..."
+                        class="w-full pl-10 pr-4 py-3 rounded-xl border border-brand-wood/70 bg-brand-wood/40 focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold text-sm transition-all text-brand-creamlight placeholder-brand-cream/40">
+                </div>
+
+                <!-- Category Dropdown -->
+                <div class="md:col-span-3">
+                    <select x-model="filterCategory"
+                        class="w-full px-4 py-3 rounded-xl border border-brand-wood/70 bg-brand-wood/40 focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold text-sm text-brand-creamlight">
+                        <option value="semua" class="bg-brand-darkest text-brand-cream">Semua Kategori</option>
+                        <template x-for="cat in categories" :key="cat">
+                            <option :value="cat" class="bg-brand-darkest text-brand-cream"
+                                x-text="categoryDisplay(cat)"></option>
+                        </template>
+                    </select>
+                </div>
+
+                <!-- Sort Dropdown -->
+                <div class="md:col-span-3">
+                    <select x-model="sortBy"
+                        class="w-full px-4 py-3 rounded-xl border border-brand-wood/70 bg-brand-wood/40 focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold text-sm text-brand-creamlight">
+                        <option value="default" class="bg-brand-darkest text-brand-cream">Urutan Standar</option>
+                        <option value="low-to-high" class="bg-brand-darkest text-brand-cream">Harga: Termurah</option>
+                        <option value="high-to-low" class="bg-brand-darkest text-brand-cream">Harga: Termahal</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Active category chips (Desktop helper) -->
+            <div class="hidden sm:flex items-center gap-2 text-xs border-t border-brand-wood/30 pt-4">
+                <span class="text-brand-amber font-semibold uppercase tracking-wider mr-2">Pilihan Cepat:</span>
+                <button @click="filterCategory = 'semua'"
+                    :class="filterCategory === 'semua' ? 'bg-brand-gold text-brand-darkest font-semibold' : 'bg-brand-wood/30 text-brand-cream/80 border border-brand-wood/50 hover:bg-brand-wood/50'"
+                    class="px-3 py-1 rounded-full transition-all">Semua</button>
+                <template x-for="cat in categories" :key="cat">
+                    <button @click="filterCategory = cat"
+                        :class="filterCategory === cat ? 'bg-brand-gold text-brand-darkest font-semibold' : categoryBadgeClass(cat) + ' text-brand-cream/80 border border-brand-wood/50 hover:bg-brand-wood/50'"
+                        class="px-3 py-1 rounded-full transition-all" x-text="categoryDisplay(cat)"></button>
+                </template>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div x-show="isLoading" class="col-span-full text-center py-12 text-brand-gold font-sans font-semibold text-sm"
+            style="display: none;">
+            <svg class="animate-spin h-8 w-8 mx-auto mb-2 text-brand-gold" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                </path>
+            </svg>
+            Memuat buku menu hangat...
+        </div>
+
+        <!-- ITEMS GRID -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+            <template x-for="item in filteredAndSortedItems" :key="item.id">
+                <div x-show="!isLoading" x-transition:enter="transition ease-out duration-300 transform"
+                    x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+                    class="bg-gradient-to-br from-brand-wood/60 to-brand-wood/30 border border-brand-wood/75 rounded-2xl p-4 sm:p-5 md:p-6 hover:border-brand-gold hover:shadow-2xl hover:shadow-brand-gold/5 transition-all duration-300 group flex flex-col justify-between relative overflow-hidden h-full">
+
+                    <!-- Top subtle corner accent -->
+                    <div
+                        class="absolute -top-3 -right-3 w-8 h-8 rounded-full border border-brand-gold/20 opacity-20 pointer-events-none">
+                    </div>
+
+                    <!-- Details -->
+                    <div class="space-y-3 sm:space-y-4 flex-grow flex flex-col justify-between">
+                        <div class="space-y-2 sm:space-y-3">
+                            <!-- Badges -->
+                            <div class="flex flex-wrap gap-1">
+                                <!-- Category Badge -->
+                                <template x-if="item.category">
+                                    <span :class="categoryBadgeClass(item.category)"
+                                        class="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded shadow-sm"
+                                        x-text="categoryDisplay(item.category)"></span>
+                                </template>
+                                <!-- Existing status badges (recommended / hot / iced / other) -->
+                                <template x-for="badgeText in (item.badges || [])">
+                                    <span :class="{
+                                        'bg-brand-gold text-brand-darkest border border-brand-gold/20': badgeText.toLowerCase() === 'recommended',
+                                        'bg-[#8c2d19] text-brand-cream border border-[#8c2d19]/20': badgeText.toLowerCase() === 'hot',
+                                        'bg-[#1d4d6c] text-[#a3dff7] border border-[#1d4d6c]/20': badgeText.toLowerCase() === 'iced',
+                                        'bg-brand-terracotta text-brand-cream': !['recommended', 'hot', 'iced'].includes(badgeText.toLowerCase())
+                                    }" class="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded shadow-sm"
+                                        x-text="badgeText"></span>
+                                </template>
+                            </div>
+                            <div class="flex items-center justify-between gap-3">
+                                <h3 class="font-serif font-bold text-base sm:text-lg lg:text-xl text-brand-creamlight group-hover:text-brand-gold transition-colors duration-200 leading-snug"
+                                    x-text="item.name"></h3>
+                                <span
+                                    class="bg-brand-gold/15 text-brand-gold px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-xl text-xs sm:text-sm font-bold border border-brand-gold/30 whitespace-nowrap"
+                                    x-text="'Rp ' + item.price.toLocaleString('id-ID')"></span>
+                            </div>
+                            <div class="border-t border-dashed border-brand-wood/60 my-1"></div>
+                            <p class="text-xs sm:text-sm text-brand-cream/75 leading-relaxed font-light mb-2 sm:mb-4"
+                                x-text="item.desc"></p>
+                        </div>
+
+                        <!-- ADD TO CART CONTROLS -->
+                        <div class="mt-0 sm:mt-2 pt-2 sm:pt-3 border-t border-brand-wood/40">
+                            <!-- Show Add Button if Qty = 0 -->
+                            <div x-show="getItemQty(item.id) === 0">
+                                <button @click="addToCart(item)"
+                                    class="w-full py-2 px-3 sm:py-2.5 sm:px-4 rounded-xl bg-brand-gold text-brand-darkest hover:bg-brand-goldlight transition-all duration-200 text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1.5 group shadow-md shadow-brand-gold/10">
+                                    <svg class="h-3.5 w-3.5 transform group-hover:scale-110 transition-transform"
+                                        fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    Tambah ke Keranjang
+                                </button>
+                            </div>
+                            <!-- Show Qty Selector if Qty > 0 -->
+                            <div x-show="getItemQty(item.id) > 0" style="display: none;">
+                                <div
+                                    class="flex items-center justify-between bg-brand-darkest/60 border border-brand-gold/40 rounded-xl p-0.5 sm:p-1 shadow-inner">
+                                    <button @click="decreaseQty(item.id)"
+                                        class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-brand-wood text-brand-cream hover:bg-brand-gold hover:text-brand-darkest hover:scale-105 active:scale-95 transition-all flex items-center justify-center font-bold text-base sm:text-lg select-none">
+                                        &minus;
+                                    </button>
+                                    <span class="font-sans font-bold text-xs sm:text-sm text-brand-gold select-none"
+                                        x-text="getItemQty(item.id)"></span>
+                                    <button @click="increaseQty(item.id)"
+                                        class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-brand-wood text-brand-cream hover:bg-brand-gold hover:text-brand-darkest hover:scale-105 active:scale-95 transition-all flex items-center justify-center font-bold text-base sm:text-lg select-none">
+                                        &plus;
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- EMPTY STATE -->
+        <div x-show="!isLoading && filteredAndSortedItems.length === 0"
+            class="text-center py-20 space-y-4 bg-brand-darkest/60 border border-dashed border-brand-wood/50 rounded-3xl"
+            style="display: none;">
+            <svg class="h-12 w-12 text-brand-gold mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h3 class="font-serif font-bold text-lg text-brand-creamlight">Menu Tidak Ditemukan</h3>
+            <p class="text-sm text-brand-cream/75 max-w-xs mx-auto">
+                Maaf, menu dengan kata kunci "<span class="font-semibold" x-text="searchQuery"></span>" belum tersedia.
+                Silakan gunakan kata kunci lain.
+            </p>
+            <button @click="searchQuery = ''; filterCategory = 'semua'"
+                class="mt-2 inline-flex items-center justify-center px-4 py-2 rounded-xl bg-brand-wood text-brand-cream hover:bg-brand-gold hover:text-brand-darkest text-xs font-semibold transition-all border border-brand-wood">
+                Reset Filter
+            </button>
+        </div>
+    </main>
+
+    <!-- FLOATING CART BUTTON -->
+    <div x-show="cartTotalItems > 0" x-transition:enter="transition ease-out duration-300 transform"
+        x-transition:enter-start="opacity-0 translate-y-10" x-transition:enter-end="opacity-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-200 transform"
+        x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-10"
+        class="fixed bottom-6 right-6 z-50" style="display: none;">
+        <a href="../cart/index.html"
+            class="flex items-center gap-3 bg-brand-gold text-brand-darkest font-serif font-bold px-6 py-4 rounded-full shadow-2xl hover:bg-brand-goldlight hover:scale-105 active:scale-95 transition-all duration-300 border border-brand-goldlight/20 relative group">
+            <span
+                class="absolute -top-2 -left-2 bg-[#8c2d19] text-brand-cream text-xs font-bold h-6 w-6 rounded-full flex items-center justify-center shadow-md border border-brand-cream/20"
+                x-text="cartTotalItems"></span>
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+            <span>Lihat Keranjang</span>
+        </a>
+    </div>
+
+    <!-- FOOTER -->
+    <footer
+        class="bg-brand-darkest border-t border-brand-wood/40 py-12 text-center text-brand-cream/60 text-sm relative z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+            <div class="flex items-center justify-center gap-3">
+                <div
+                    class="h-10 w-10 rounded-full border border-brand-gold overflow-hidden flex items-center justify-center bg-transparent">
+                    <img src="../assets/images/logo.png" alt="Mbah Mingoen Logo Footer"
+                        class="h-full w-full object-cover invert">
+                </div>
+                <span class="font-serif font-bold text-lg text-brand-creamlight">Warkop Mbah Mingoen</span>
+            </div>
+            <p class="max-w-xl mx-auto text-xs sm:text-sm text-brand-cream/50 leading-relaxed">
+                Jl. Raya Kesesi Utara sebelah mushola Al Hadi No.07, RT.03, Kesesi Selatan, kaliwadas, Kec. Kesesi,
+                Kabupaten Pekalongan, Jawa Tengah 51162
+            </p>
+            <div class="flex justify-center pt-2">
+                <a href="https://www.instagram.com/kedaikopi_mbahmingoen/" target="_blank"
+                    class="text-brand-cream/60 hover:text-brand-gold transition-colors flex items-center gap-2 text-xs font-semibold tracking-wider uppercase">
+                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path
+                            d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
+                    </svg>
+                    @kedaikopi_mbahmingoen
+                </a>
+            </div>
+            <div class="flex justify-center gap-6 text-xs uppercase tracking-wider font-semibold pt-2">
+                <a href="../index.html#beranda" class="hover:text-brand-gold transition-colors">Beranda</a>
+                <a href="../index.html#tentang" class="hover:text-brand-gold transition-colors">Tentang</a>
+                <a href="../menu/index.html" class="hover:text-brand-gold transition-colors">Menu</a>
+                <a href="../index.html#kontak" class="hover:text-brand-gold transition-colors">Hubungi</a>
+            </div>
+            <div class="border-t border-brand-wood/25 pt-6 text-xs text-brand-cream/40 space-y-1">
+                <div>&copy; 2026 Warkop Mbah Mingoen.</div>
+                <div class="text-[10px] text-brand-cream/30">Developed by Hanif Bagus Saputra</div>
+            </div>
+        </div>
+    </footer>
+
+</body>
+
+</html>

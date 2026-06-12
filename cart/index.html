@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Keranjang Belanja - Warkop Mbah Mingoen. Selesaikan pesanan hidangan tempo doeloe Anda di sini.">
+    <title>Keranjang Belanja | Warkop Mbah Mingoen</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            darkest: '#140e0a',   /* Darkest mahogany wood */
+                            dark: '#22160f',      /* Deep coffee brown */
+                            wood: '#3e281b',      /* Rich teak wood */
+                            amber: '#8c593b',     /* Warm medium brown */
+                            terracotta: '#b85a38',/* Javanese clay/terracotta */
+                            gold: '#dfa15f',      /* Warm caramel/gold */
+                            cream: '#f9ebdb',     /* Soft ivory/cream background */
+                            creamlight: '#fff8f0' /* Warm off-white */
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        serif: ['"Playfair Display"', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Alpine.js CDN -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <style>
+        /* Custom scrollbar matching the retro theme */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #22160f;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #8c593b;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #dfa15f;
+        }
+
+        .vintage-grid-pattern {
+            background-image: radial-gradient(rgba(140, 89, 59, 0.15) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+        .batik-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.03;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cpath d='M30 0 L60 30 L30 60 L0 30 Z' fill='none' stroke='%238c593b' stroke-width='1'/%3E%3Ccircle cx='30' cy='30' r='10' fill='none' stroke='%238c593b' stroke-width='1'/%3E%3Cpath d='M30 10 L30 20 M30 40 L30 50 M10 30 L20 30 M40 30 L50 30' stroke='%238c593b' stroke-width='1'/%3E%3C/svg%3E");
+        }
+    </style>
+</head>
+
+<body
+    class="bg-brand-dark text-brand-cream font-sans antialiased overflow-x-hidden relative min-h-screen flex flex-col justify-between"
+    x-data="{
+          meja: '',
+          cart: [],
+          customerName: '',
+          isOrderSubmitted: false,
+          submittedOrderDetails: null,
+          showValidationError: false,
+
+          initCart() {
+              this.meja = localStorage.getItem('warkop_meja') || '';
+              try {
+                  const savedCart = localStorage.getItem('warkop_cart');
+                  this.cart = savedCart ? JSON.parse(savedCart) : [];
+              } catch(e) {
+                  this.cart = [];
+              }
+          },
+          saveCart() {
+              localStorage.setItem('warkop_cart', JSON.stringify(this.cart));
+          },
+          increaseQty(itemId) {
+              let existing = this.cart.find(c => c.id === itemId);
+              if (existing) {
+                  existing.quantity++;
+                  this.saveCart();
+              }
+          },
+          decreaseQty(itemId) {
+              let idx = this.cart.findIndex(c => c.id === itemId);
+              if (idx !== -1) {
+                  if (this.cart[idx].quantity > 1) {
+                      this.cart[idx].quantity--;
+                  } else {
+                      this.cart.splice(idx, 1);
+                  }
+                  this.saveCart();
+              }
+          },
+          removeItem(itemId) {
+              this.cart = this.cart.filter(c => c.id !== itemId);
+              this.saveCart();
+          },
+          get subtotal() {
+              return this.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+          },
+          get total() {
+              return this.subtotal;
+          },
+          submitOrder() {
+              if (!this.customerName.trim()) {
+                  this.showValidationError = true;
+                  return;
+              }
+              this.showValidationError = false;
+
+              // Capture submitted details before clearing
+              this.submittedOrderDetails = {
+                  customerName: this.customerName,
+                  meja: this.meja || 'Belum di-set',
+                  items: JSON.parse(JSON.stringify(this.cart)),
+                  totalPrice: this.total
+              };
+
+              // Clear cart in state and storage
+              this.cart = [];
+              this.saveCart();
+              
+              // Show success screen
+              this.isOrderSubmitted = true;
+          },
+          resetOrder() {
+              this.isOrderSubmitted = false;
+              this.customerName = '';
+              this.submittedOrderDetails = null;
+          }
+      }" x-init="initCart()">
+
+    <!-- Vintage Background Grid -->
+    <div class="vintage-grid-pattern absolute inset-0 z-0 opacity-40 pointer-events-none"></div>
+
+    <!-- HEADER -->
+    <header
+        class="bg-brand-darkest border-b border-brand-wood/40 sticky top-0 z-40 backdrop-blur-md bg-brand-darkest/95">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <!-- Brand Logo -->
+                <a href="../index.html" class="flex items-center gap-3 group">
+                    <div
+                        class="h-14 w-14 rounded-full border-2 border-brand-gold overflow-hidden shadow-lg shadow-brand-gold/10 transition-transform group-hover:rotate-6 flex items-center justify-center bg-transparent">
+                        <img src="../assets/images/logo.png" alt="Mbah Mingoen Logo"
+                            class="h-full w-full object-cover invert">
+                    </div>
+                    <div>
+                        <span
+                            class="font-serif font-bold text-xl sm:text-2xl text-brand-creamlight tracking-wide block leading-none">Warkop</span>
+                        <span class="font-sans text-xs text-brand-gold tracking-widest uppercase font-semibold">Mbah
+                            Mingoen</span>
+                    </div>
+                </a>
+
+                <!-- Table Indicator & Back button to Catalog -->
+                <div class="flex items-center gap-4">
+                    <template x-if="meja">
+                        <span
+                            class="bg-brand-wood/80 border border-brand-gold/30 text-brand-gold text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5">
+                            <span class="h-2 w-2 rounded-full bg-brand-gold animate-pulse"></span>
+                            Meja <span x-text="meja"></span>
+                        </span>
+                    </template>
+                    <a href="../menu/"
+                        class="inline-flex items-center gap-2 text-sm text-brand-cream/80 hover:text-brand-gold transition-colors font-medium">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                        Buku Menu
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="flex-grow max-w-3xl w-full mx-auto px-4 sm:px-6 py-10 relative z-10">
+
+        <!-- CASE 1: SUCCESS PLACEHOLDER -->
+        <template x-if="isOrderSubmitted">
+            <div
+                class="bg-brand-darkest/60 border border-brand-gold/40 rounded-3xl p-8 text-center space-y-6 shadow-2xl relative overflow-hidden">
+                <div
+                    class="absolute -top-12 -right-12 w-24 h-24 rounded-full border border-brand-gold/20 opacity-20 pointer-events-none">
+                </div>
+
+                <div
+                    class="h-16 w-16 bg-brand-gold/15 text-brand-gold rounded-full flex items-center justify-center mx-auto border border-brand-gold/30">
+                    <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                </div>
+
+                <div class="space-y-2">
+                    <h2 class="font-serif font-extrabold text-2xl sm:text-3xl text-brand-creamlight">Pesanan Berhasil
+                        Dikirim!</h2>
+                    <p class="text-brand-cream/75 text-sm max-w-md mx-auto">
+                        Matur nuwun <span class="text-brand-gold font-semibold"
+                            x-text="submittedOrderDetails.customerName"></span>, pesanan Anda dari <span
+                            class="text-brand-gold font-semibold">Meja <span
+                                x-text="submittedOrderDetails.meja"></span></span> sudah tercatat di sistem kami dan
+                        sedang disiapkan oleh Mbah.
+                    </p>
+                </div>
+
+                <!-- Receipt Detail -->
+                <div
+                    class="border border-brand-wood/60 bg-brand-wood/25 rounded-2xl p-5 text-left text-xs sm:text-sm space-y-3 font-mono">
+                    <div
+                        class="text-center font-serif font-bold text-sm tracking-wider text-brand-gold pb-2 border-b border-dashed border-brand-wood">
+                        DETAIL STRUK PEMESANAN
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Nama Pelanggan:</span>
+                        <span class="text-brand-creamlight" x-text="submittedOrderDetails.customerName"></span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Nomor Meja:</span>
+                        <span class="text-brand-creamlight" x-text="submittedOrderDetails.meja"></span>
+                    </div>
+                    <div class="border-b border-dashed border-brand-wood my-2"></div>
+                    <div class="space-y-1.5">
+                        <template x-for="item in submittedOrderDetails.items" :key="item.id">
+                            <div class="flex justify-between text-brand-cream/80">
+                                <span x-text="item.name + ' (x' + item.quantity + ')'"></span>
+                                <span x-text="'Rp ' + (item.price * item.quantity).toLocaleString('id-ID')"></span>
+                            </div>
+                        </template>
+                    </div>
+                    <div class="border-b border-dashed border-brand-wood my-2"></div>
+                    <div class="flex justify-between text-brand-gold font-bold">
+                        <span>Total Bayar:</span>
+                        <span x-text="'Rp ' + submittedOrderDetails.totalPrice.toLocaleString('id-ID')"></span>
+                    </div>
+                </div>
+
+                <button @click="resetOrder()"
+                    class="inline-flex items-center gap-2 bg-brand-gold hover:bg-brand-goldlight text-brand-darkest font-serif font-bold px-6 py-3 rounded-xl transition-all duration-300 shadow-md">
+                    Pesan Menu Lain
+                </button>
+            </div>
+        </template>
+
+        <!-- CASE 2: NORMAL CART DISPLAY -->
+        <template x-if="!isOrderSubmitted">
+            <div class="space-y-6">
+
+                <!-- Table indicator lock info -->
+                <div
+                    class="bg-brand-darkest/60 border border-brand-wood/60 rounded-2xl p-4 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <span
+                            class="h-10 w-10 rounded-full bg-brand-gold/10 text-brand-gold flex items-center justify-center border border-brand-gold/20 font-serif font-bold">
+                            #
+                        </span>
+                        <div>
+                            <span
+                                class="text-brand-cream/60 text-[10px] uppercase tracking-wider block font-semibold">Tujuan
+                                Antar</span>
+                            <span class="font-serif font-bold text-brand-creamlight text-sm">
+                                <template x-if="meja">
+                                    <span>Meja Nomor <span class="text-brand-gold" x-text="meja"></span></span>
+                                </template>
+                                <template x-if="!meja">
+                                    <span class="text-[#8c2d19]">Meja Belum Ditentukan</span>
+                                </template>
+                            </span>
+                        </div>
+                    </div>
+
+                    <template x-if="!meja">
+                        <span
+                            class="text-[10px] bg-[#8c2d19]/20 text-[#dfa15f] border border-[#8c2d19]/40 px-2.5 py-1 rounded-full font-bold animate-pulse">
+                            SCAN QR MEJA
+                        </span>
+                    </template>
+                </div>
+
+                <!-- Empty Cart State -->
+                <template x-if="cart.length === 0">
+                    <div
+                        class="bg-brand-darkest/60 border border-dashed border-brand-wood/60 rounded-3xl p-12 text-center space-y-6">
+                        <svg class="h-12 w-12 text-brand-gold mx-auto opacity-75" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                        </svg>
+                        <div class="space-y-2">
+                            <h3 class="font-serif font-bold text-lg text-brand-creamlight">Keranjang Anda Kosong</h3>
+                            <p class="text-xs text-brand-cream/70 max-w-xs mx-auto">
+                                Belum ada hidangan hangat yang dimasukkan. Mari jelajahi buku menu lezat Mbah Mingoen.
+                            </p>
+                        </div>
+                        <a href="../menu/"
+                            class="inline-flex items-center gap-2 bg-brand-gold hover:bg-brand-goldlight text-brand-darkest font-serif font-bold px-6 py-3 rounded-xl transition-all duration-300 shadow-md text-sm">
+                            Buka Buku Menu
+                        </a>
+                    </div>
+                </template>
+
+                <!-- Loaded Cart Items -->
+                <template x-if="cart.length > 0">
+                    <div class="space-y-6">
+                        <!-- Items Grid/List Card -->
+                        <div
+                            class="bg-brand-darkest/60 border border-brand-wood/60 rounded-3xl p-6 space-y-6 shadow-sm">
+                            <h3
+                                class="font-serif font-bold text-lg text-brand-creamlight border-b border-brand-wood/40 pb-3 flex justify-between items-center">
+                                <span>Detail Keranjang</span>
+                                <span class="text-xs font-sans text-brand-cream/60"
+                                    x-text="cart.length + ' item unik'"></span>
+                            </h3>
+
+                            <div class="divide-y divide-brand-wood/30 space-y-4">
+                                <template x-for="item in cart" :key="item.id">
+                                    <div class="flex items-center justify-between gap-4 pt-4 first:pt-0">
+                                        <div class="space-y-1">
+                                            <h4 class="font-serif font-bold text-sm sm:text-base text-brand-creamlight"
+                                                x-text="item.name"></h4>
+                                            <span class="text-xs text-brand-gold font-semibold"
+                                                x-text="'Rp ' + item.price.toLocaleString('id-ID')"></span>
+                                        </div>
+
+                                        <!-- Actions (Qty Modifier & Delete) -->
+                                        <div class="flex items-center gap-3">
+                                            <!-- Qty Modifier -->
+                                            <div
+                                                class="flex items-center bg-brand-darkest border border-brand-wood rounded-lg p-0.5">
+                                                <button @click="decreaseQty(item.id)"
+                                                    class="w-7 h-7 rounded bg-brand-wood text-brand-cream hover:bg-brand-gold hover:text-brand-darkest transition-colors flex items-center justify-center font-bold text-sm">
+                                                    &minus;
+                                                </button>
+                                                <span
+                                                    class="w-8 text-center font-sans font-bold text-xs text-brand-gold"
+                                                    x-text="item.quantity"></span>
+                                                <button @click="increaseQty(item.id)"
+                                                    class="w-7 h-7 rounded bg-brand-wood text-brand-cream hover:bg-brand-gold hover:text-brand-darkest transition-colors flex items-center justify-center font-bold text-sm">
+                                                    &plus;
+                                                </button>
+                                            </div>
+
+                                            <!-- Remove button -->
+                                            <button @click="removeItem(item.id)"
+                                                class="text-[#8c2d19] hover:text-[#b85a38] p-1 transition-colors"
+                                                title="Hapus item">
+                                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                                                    stroke="currentColor" stroke-width="2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- Customer Details Form -->
+                        <div class="bg-brand-darkest/60 border border-brand-wood/60 rounded-3xl p-6 space-y-4">
+                            <h3
+                                class="font-serif font-bold text-lg text-brand-creamlight border-b border-brand-wood/40 pb-3">
+                                Data Pemesan
+                            </h3>
+                            <div class="space-y-1.5">
+                                <label for="cust-name"
+                                    class="block text-xs uppercase tracking-wider text-brand-cream/70 font-semibold">Nama
+                                    Lengkap</label>
+                                <input type="text" id="cust-name" x-model="customerName"
+                                    @input="showValidationError = false" placeholder="Tulis nama Anda di sini..."
+                                    class="w-full px-4 py-3 rounded-xl border border-brand-wood/70 bg-brand-wood/30 focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold text-sm text-brand-creamlight placeholder-brand-cream/30 transition-all">
+                                <p x-show="showValidationError"
+                                    class="text-xs text-[#b85a38] font-semibold flex items-center gap-1"
+                                    style="display: none;">
+                                    <span>⚠️ Nama pemesan wajib diisi sebelum mengirim pesanan.</span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Cost Summary Card -->
+                        <div class="bg-brand-darkest/60 border border-brand-wood/60 rounded-3xl p-6 space-y-4">
+                            <h3
+                                class="font-serif font-bold text-lg text-brand-creamlight border-b border-brand-wood/40 pb-3">
+                                Ringkasan Pembayaran
+                            </h3>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between text-brand-cream/80">
+                                    <span>Subtotal Hidangan:</span>
+                                    <span x-text="'Rp ' + subtotal.toLocaleString('id-ID')"></span>
+                                </div>
+                                <div class="flex justify-between text-brand-cream/80">
+                                    <span>Pajak & Layanan:</span>
+                                    <span>Rp 0</span>
+                                </div>
+                                <div
+                                    class="border-t border-dashed border-brand-wood/50 my-2 pt-2 flex justify-between font-serif font-bold text-lg text-brand-gold">
+                                    <span>Total Pembayaran:</span>
+                                    <span x-text="'Rp ' + total.toLocaleString('id-ID')"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="space-y-3">
+                            <template x-if="!meja">
+                                <div
+                                    class="bg-[#8c2d19]/20 border border-[#8c2d19]/50 text-brand-gold p-4 rounded-2xl text-xs sm:text-sm text-center">
+                                    ⚠️ Tombol pemesanan dinonaktifkan karena Anda belum menentukan nomor meja. Silakan
+                                    scan QR code di meja Anda terlebih dahulu.
+                                </div>
+                            </template>
+
+                            <button @click="submitOrder()" :disabled="!meja"
+                                :class="!meja ? 'opacity-50 cursor-not-allowed bg-brand-wood/70 text-brand-cream/55' : 'bg-brand-gold hover:bg-brand-goldlight text-brand-darkest hover:scale-[1.01] active:scale-95 shadow-lg shadow-brand-gold/10'"
+                                class="w-full py-4 rounded-2xl font-serif font-bold text-base transition-all duration-300 flex items-center justify-center gap-2">
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                </svg>
+                                Kirim Pesanan ke Kasir
+                            </button>
+
+                            <a href="../menu/"
+                                class="block text-center w-full py-3 rounded-2xl border border-brand-wood/70 text-brand-cream/70 hover:text-brand-gold hover:border-brand-gold/50 text-xs font-semibold transition-all">
+                                Kembali ke Buku Menu (Tambah Item)
+                            </a>
+                        </div>
+                    </div>
+                </template>
+
+            </div>
+        </template>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-brand-darkest border-t border-brand-wood/40 py-12 text-center text-brand-cream/60 text-sm mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+            <div class="flex items-center justify-center gap-3">
+                <div
+                    class="h-10 w-10 rounded-full border border-brand-gold overflow-hidden flex items-center justify-center bg-transparent">
+                    <img src="../assets/images/logo.png" alt="Mbah Mingoen Logo Footer"
+                        class="h-full w-full object-cover invert">
+                </div>
+                <span class="font-serif font-bold text-lg text-brand-creamlight">Warkop Mbah Mingoen</span>
+            </div>
+            <p class="max-w-xl mx-auto text-xs sm:text-sm text-brand-cream/50 leading-relaxed">
+                Jl. Raya Kesesi Utara sebelah mushola Al Hadi No.07, RT.03, Kesesi Selatan, kaliwadas, Kec. Kesesi,
+                Kabupaten Pekalongan, Jawa Tengah 51162
+            </p>
+            <div class="flex justify-center pt-2">
+                <a href="https://www.instagram.com/kedaikopi_mbahmingoen/" target="_blank"
+                    class="text-brand-cream/60 hover:text-brand-gold transition-colors flex items-center gap-2 text-xs font-semibold tracking-wider uppercase">
+                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path
+                            d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
+                    </svg>
+                    @kedaikopi_mbahmingoen
+                </a>
+            </div>
+            <div class="flex justify-center gap-6 text-xs uppercase tracking-wider font-semibold pt-2">
+                <a href="../index.html#beranda" class="hover:text-brand-gold transition-colors">Beranda</a>
+                <a href="../index.html#tentang" class="hover:text-brand-gold transition-colors">Tentang</a>
+                <a href="../menu/index.html" class="hover:text-brand-gold transition-colors">Menu</a>
+                <a href="../index.html#kontak" class="hover:text-brand-gold transition-colors">Hubungi</a>
+            </div>
+            <div class="border-t border-brand-wood/25 pt-6 text-xs text-brand-cream/40 space-y-1">
+                <div>&copy; 2026 Warkop Mbah Mingoen.</div>
+                <div class="text-[10px] text-brand-cream/30">Developed by Hanif Bagus Saputra</div>
+            </div>
+        </div>
+    </footer>
+
+</body>
+
+</html>

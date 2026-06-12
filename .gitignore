@@ -1,0 +1,2 @@
+# Ignore the entire plans directory containing sensitive data
+plans/
