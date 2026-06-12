@@ -184,6 +184,14 @@
           meja: '',
           cart: [],
           initCart() {
+              // Auto-clear localStorage if more than 1 hour has passed
+              const lastClear = localStorage.getItem('warkop_last_clear');
+              if (!lastClear || Date.now() - Number(lastClear) > 3600000) {
+                  localStorage.removeItem('warkop_meja');
+                  localStorage.removeItem('warkop_cart');
+                  localStorage.setItem('warkop_last_clear', Date.now().toString());
+              }
+
               // Parse table number from URL or localStorage
               const urlParams = new URLSearchParams(window.location.search);
               const urlMeja = urlParams.get('meja');
