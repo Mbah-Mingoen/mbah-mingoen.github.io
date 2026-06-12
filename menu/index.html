@@ -251,7 +251,7 @@
     <div class="vintage-grid-pattern absolute inset-0 z-0 opacity-40 pointer-events-none"></div>
 
     <!-- STICKY TABLE WARNING (IF NO TABLE) -->
-    <div x-show="!meja"
+    <div x-show="false"
         class="bg-[#8c2d19] text-brand-cream py-3 px-4 text-center text-xs font-semibold tracking-wide relative z-50 border-b border-brand-wood/40 flex items-center justify-center gap-2">
         <svg class="h-4 w-4 text-brand-gold animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor"
             stroke-width="2.5">
@@ -502,11 +502,11 @@
                         </div>
 
                         <!-- ADD TO CART CONTROLS -->
-                        <div class="mt-0 sm:mt-2 pt-2 sm:pt-3 border-t border-brand-wood/40">
-                            <!-- Show Add Button if Qty = 0 -->
-                            <div x-show="getItemQty(item.id) === 0">
+                        <div x-show="meja" class="border-t border-brand-wood/40">
+                            <!-- Show Add Button if Qty = 0 and meja is set -->
+                            <div x-show="meja && getItemQty(item.id) === 0">
                                 <button @click="addToCart(item)"
-                                    class="w-full py-2 px-3 sm:py-2.5 sm:px-4 rounded-xl bg-brand-gold text-brand-darkest hover:bg-brand-goldlight transition-all duration-200 text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1.5 group shadow-md shadow-brand-gold/10">
+                                    class="w-full py-1 px-2 rounded-xl bg-brand-gold text-brand-darkest hover:bg-brand-goldlight transition-all duration-200 text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1.5 group shadow-md shadow-brand-gold/10">
                                     <svg class="h-3.5 w-3.5 transform group-hover:scale-110 transition-transform"
                                         fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
@@ -514,8 +514,8 @@
                                     Tambah ke Keranjang
                                 </button>
                             </div>
-                            <!-- Show Qty Selector if Qty > 0 -->
-                            <div x-show="getItemQty(item.id) > 0" style="display: none;">
+                            <!-- Show Qty Selector if Qty > 0 and meja is set -->
+                            <div x-show="meja && getItemQty(item.id) > 0" style="display: none;">
                                 <div
                                     class="flex items-center justify-between bg-brand-darkest/60 border border-brand-gold/40 rounded-xl p-0.5 sm:p-1 shadow-inner">
                                     <button @click="decreaseQty(item.id)"
