@@ -1,2 +1,5 @@
 # Ignore the entire plans directory containing sensitive data
 plans/
+# Exclude debug helper files (not tracked)
+plans/debug.html
+plans/debug_sheets.html
